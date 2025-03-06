@@ -1,0 +1,58 @@
+name: Part 2 Workflow
+
+on:
+  push:
+
+jobs:
+  # Build and push Docker image to Docker Hub
+  build-and-push:
+    runs-on: brooks-macbook
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Login to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Build Docker image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/itas276-assign1:latest .
+      - name: Push Docker image
+        run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/itas276-assign1:latest
+
+  # SAST with Semgrep
+  semgrep:
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - name: Clone application source code
+        uses: actions/checkout@v4
+      - name: Run full Semgrep scan
+        run: |
+          semgrep \
+            --sarif --output semgrep-sast.sarif \
+            --metrics=off \
+            --config="p/default"
+      - name: Save report as pipeline artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-sast.sarif
+          path: semgrep-sast.sarif
+
+  # SCA with Snyk
+  snyk:
+    needs:
+      - build-and-push
+    runs-on: brooks-macbook
+    steps:
+    - name: Run Snyk to check Docker image for vulnerabilities
+      uses: snyk/actions/docker@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: ${{ secrets.DOCKERHUB_USERNAME }}/itas276-assign1:latest
+        args: --sarif-file-output=snyk.sarif # Tell snyk to output sarif file
+      continue-on-error: true
+    - name: Save report as pipeline artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: snyk-sca.sarif
+        path: snyk.sarif
