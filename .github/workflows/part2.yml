@@ -19,7 +19,7 @@ jobs:
 
   # SAST with Semgrep
   semgrep:
-    runs-on: macOS
+    runs-on: Linux
     container:
       image: semgrep/semgrep
     steps:
