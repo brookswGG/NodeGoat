@@ -26,7 +26,7 @@ jobs:
       - name: Clone application source code
         uses: actions/checkout@v4
       - name: Run full Semgrep scan
-        run: semgrep ci --sarif --output semgrep-sast.sarif
+        run: semgrep ci --sarif --output semgrep.sarif
       - name: Save report as pipeline artifact
         uses: actions/upload-artifact@v4
         with:
