@@ -26,12 +26,12 @@ jobs:
       - name: Clone application source code
         uses: actions/checkout@v4
       - name: Run full Semgrep scan
-        run: semgrep ci --sarif --output semgrep.sarif
+        run: semgrep ci --sarif -output=semgrep-sast.sarif
       - name: Save report as pipeline artifact
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-sast.sarif
-          path: semgrep.sarif
+          path: semgrep-sast.sarif
 
   # SCA with Snyk
   snyk:
