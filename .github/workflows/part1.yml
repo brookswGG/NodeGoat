@@ -4,6 +4,22 @@ on:
   push:
 
 jobs:
+
+  # Notify Discord server of pipeline starting
+  discord-begin:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Discord webhook start notification
+      uses: tsickert/discord-webhook@v5.3.0
+      with:
+        webhook-url: ${{ secrets.WEBHOOK_URL }}
+        username: "the GOAT"
+        avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
+        embed-title: "Security Pipeline jobs are starting..."
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        embed-author-name: "${{ github.triggering_actor }}"
+
   # Build and push Docker image to Docker Hub
   build-and-push:
     runs-on: ubuntu-latest
