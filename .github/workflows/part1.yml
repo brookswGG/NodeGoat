@@ -72,3 +72,41 @@ jobs:
       with:
         name: snyk-sca.sarif
         path: snyk.sarif
+
+  # Notify Discord server of snyk job
+  discord-snyk:
+    runs-on: ubuntu-latest
+    needs: [snyk]
+    steps:
+    - name: Download Snyk SARIF report
+      uses: actions/download-artifact@v4
+      with:
+        name: snyk-sca.sarif
+    - name: Discord webhook end notification
+      uses: tsickert/discord-webhook@v5.3.0
+      with:
+        webhook-url: ${{ secrets.WEBHOOK_URL }}
+        username: "the GOAT"
+        avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
+        embed-title: "Snyk SCA completed."
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        embed-author-name: "${{ github.triggering_actor }}"
+        file: snyk.sarif 
+
+  # Notify Discord server of pipeline ending
+  discord-end:
+    runs-on: ubuntu-latest
+    needs: [snyk, semgrep]
+    if: always()
+    steps:
+    - name: Discord webhook end notification
+      uses: tsickert/discord-webhook@v5.3.0
+      with:
+        webhook-url: ${{ secrets.WEBHOOK_URL }}
+        username: "the GOAT"
+        avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
+        embed-title: "Security Pipeline jobs have completed!"
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+        embed-author-name: "${{ github.triggering_actor }}"
