@@ -4,6 +4,7 @@ on:
   push:
 
 jobs:
+
   # Notify Discord server of pipeline starting
   discord-begin:
     runs-on: ubuntu-latest
@@ -14,11 +15,11 @@ jobs:
         webhook-url: ${{ secrets.WEBHOOK_URL }}
         username: "the GOAT"
         avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
-        content: "Security Pipeline jobs are starting..."
+        embed-title: "Security Pipeline jobs are starting..."
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         embed-author-name: "${{ github.triggering_actor }}"
         embed-color: 615fff
-        embed-title: "Pipeline Starting"
-        embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
 
   # Build and push Docker image to Docker Hub
   build-and-push:
@@ -44,14 +45,14 @@ jobs:
       - name: Run full Semgrep scan
         run: |
           semgrep \
-            --sarif --output semgrep-report.sarif \
+            --sarif --output semgrep-sast.sarif \
             --metrics=off \
             --config="p/default"
       - name: Save report as pipeline artifact
         uses: actions/upload-artifact@v4
         with:
-          name: semgrep-report
-          path: semgrep-report.sarif
+          name: semgrep-sast.sarif
+          path: semgrep-sast.sarif
 
   # Notify Discord server of semgrep job
   discord-semgrep:
@@ -61,22 +62,24 @@ jobs:
     - name: Download Semgrep SARIF report
       uses: actions/download-artifact@v4
       with:
-        name: semgrep-report
+        name: semgrep-sast.sarif
     - name: Discord webhook end notification
       uses: tsickert/discord-webhook@v5.3.0
       with:
         webhook-url: ${{ secrets.WEBHOOK_URL }}
         username: "the GOAT"
         avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
-        content: "Semgrep scan completed."
-        embed-title: "Semgrep Results"
+        embed-title: "Semgrep scan completed."
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-        filename: semgrep-report.sarif
+        embed-author-name: "${{ github.triggering_actor }}"
         embed-color: 615fff
+        filename: semgrep-sast.sarif
 
   # SCA with Snyk
   snyk:
-    needs: [build-and-push]
+    needs:
+      - build-and-push
     runs-on: ubuntu-latest
     steps:
     - name: Run Snyk to check Docker image for vulnerabilities
@@ -85,13 +88,13 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: ${{ secrets.DOCKERHUB_USERNAME }}/itas276-assign1:latest
-        args: --sarif-file-output=snyk-report.sarif
+        args: --sarif-file-output=snyk.sarif # Tell snyk to output sarif file
       continue-on-error: true
     - name: Save report as pipeline artifact
       uses: actions/upload-artifact@v4
       with:
-        name: snyk-report
-        path: snyk-report.sarif
+        name: snyk-sca.sarif
+        path: snyk.sarif
 
   # Notify Discord server of snyk job
   discord-snyk:
@@ -101,18 +104,19 @@ jobs:
     - name: Download Snyk SARIF report
       uses: actions/download-artifact@v4
       with:
-        name: snyk-report
+        name: snyk-sca.sarif
     - name: Discord webhook end notification
       uses: tsickert/discord-webhook@v5.3.0
       with:
         webhook-url: ${{ secrets.WEBHOOK_URL }}
         username: "the GOAT"
         avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
-        content: "Snyk SCA completed."
-        embed-title: "Snyk Results"
+        embed-title: "Snyk SCA completed."
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
-        filename: snyk-report.sarif
+        embed-author-name: "${{ github.triggering_actor }}"
         embed-color: 615fff
+        filename: snyk.sarif 
 
   # Notify Discord server of pipeline ending
   discord-end:
@@ -126,8 +130,8 @@ jobs:
         webhook-url: ${{ secrets.WEBHOOK_URL }}
         username: "the GOAT"
         avatar-url: https://upload.wikimedia.org/wikipedia/commons/d/d3/Deer-Goat.jpg
-        content: "Security Pipeline jobs have completed!"
-        embed-title: "Pipeline Complete"
+        embed-title: "Security Pipeline jobs have completed!"
+        embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         embed-author-name: "${{ github.triggering_actor }}"
         embed-color: 615fff
