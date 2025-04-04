@@ -92,7 +92,7 @@ jobs:
         embed-url: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         embed-description: "[Action details ${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
         embed-author-name: "${{ github.triggering_actor }}"
-        file: snyk.sarif 
+        filename: snyk.sarif 
 
   # Notify Discord server of pipeline ending
   discord-end:
